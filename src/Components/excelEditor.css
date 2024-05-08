@@ -1,0 +1,69 @@
+/* ExcelEditor.css */
+
+/* Main container */
+div {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+/* File input */
+input[type="file"] {
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Filter input fields */
+.filters input {
+    margin-right: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+/* Table headers */
+table th {
+    padding: 10px;
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+}
+
+/* Table rows and cells */
+table td {
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+/* Input fields inside cells */
+table input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+button {
+    margin-right: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007BFF;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
