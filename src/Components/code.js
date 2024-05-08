@@ -2128,3 +2128,825 @@ export default ExcelEditor;
 // }
 
 // export default ExcelEditor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState } from 'react';
+// import * as XLSX from 'xlsx';
+// import './excelEditor.css';
+
+// function ExcelEditor() {
+//     const [headers, setHeaders] = useState([]);
+//     const [data, setData] = useState([]);
+//     const [filteredData, setFilteredData] = useState([]);
+//     const [filters, setFilters] = useState([]);
+//     const [columnTypes, setColumnTypes] = useState([]);
+//     const [dateColumns, setDateColumns] = useState([]);
+
+//     // Handle file upload and read data
+//     const handleFileUpload = (e) => {
+//         const file = e.target.files[0];
+//         const reader = new FileReader();
+
+//         reader.onload = (event) => {
+//             const binaryString = event.target.result;
+//             const workbook = XLSX.read(binaryString, { type: 'binary' });
+//             const sheetName = workbook.SheetNames[0];
+//             const worksheet = workbook.Sheets[sheetName];
+//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+//             // Extract headers (first row) and data rows
+//             const headers = excelData[0];
+//             const dataRows = excelData.slice(1);
+
+//             // Set headers, data, and filtered data
+//             setHeaders(headers);
+//             setData(dataRows);
+//             setFilteredData(dataRows);
+
+//             // Initialize filters with empty values
+//             setFilters(Array(headers.length).fill(''));
+
+//             // Determine and set column types and date columns
+//             setColumnTypes(determineColumnTypes(dataRows));
+//             setDateColumns(determineDateColumns(headers, worksheet));
+//         };
+
+//         reader.readAsBinaryString(file);
+//     };
+
+//     // Function to determine column types based on data rows
+//     const determineColumnTypes = (dataRows) => {
+//         const types = [];
+//         if (dataRows.length > 0) {
+//             dataRows[0].forEach((cell, index) => {
+//                 if (typeof cell === 'number') {
+//                     types.push('number');
+//                 } else if (isValidDate(cell)) {
+//                     types.push('date');
+//                 } else {
+//                     types.push('string');
+//                 }
+//             });
+//         }
+//         return types;
+//     };
+
+//     // Function to determine date columns and their formats
+//     const determineDateColumns = (headers, worksheet) => {
+//         const dateColumns = [];
+//         headers.forEach((header, index) => {
+//             const firstCell = worksheet[XLSX.utils.encode_cell({ c: index, r: 1 })]; // Cell in first data row
+//             if (firstCell && firstCell.z) {
+//                 const format = firstCell.z;
+//                 if (format.includes('d') || format.includes('m') || format.includes('y')) {
+//                     dateColumns.push({ index, format });
+//                 }
+//             }
+//         });
+//         return dateColumns;
+//     };
+
+//     // Helper function to check if a value is a valid date
+//     const isValidDate = (value) => {
+//         const date = new Date(value);
+//         return !isNaN(date.getTime());
+//     };
+
+//     // Apply filters to the data
+//     const applyFilters = () => {
+//         // Filter data based on filters state
+//         const filtered = data.filter(row =>
+//             row.every((cell, index) => {
+//                 // If filter is empty, consider it as a match
+//                 if (filters[index] === '') {
+//                     return true;
+//                 }
+//                 // Perform case-insensitive comparison for the filter
+//                 return String(cell).toLowerCase().includes(filters[index].toLowerCase());
+//             })
+//         );
+//         setFilteredData(filtered);
+//     };
+
+//     // Handle cell change with data validation and date formatting
+//     const handleCellChange = (e, rowIndex, columnIndex) => {
+//         const newValue = e.target.value;
+//         const expectedType = columnTypes[columnIndex];
+
+//         // Validate the new cell value based on expected data type
+//         if (!isValidValue(newValue, expectedType)) {
+//             alert(`Invalid input! Expected a value of type ${expectedType}.`);
+//             return;
+//         }
+
+//         // If the column is a date column, try parsing and formatting the date
+//         if (expectedType === 'date') {
+//             const dateColumn = dateColumns.find(col => col.index === columnIndex);
+//             if (dateColumn) {
+//                 const parsedDate = new Date(newValue);
+//                 if (!isNaN(parsedDate)) {
+//                     // Format the date according to the expected format
+//                     newValue = XLSX.SSF.format(dateColumn.format, parsedDate);
+//                 }
+//             }
+//         }
+
+//         // Update data state with the new value
+//         const newData = [...data];
+//         newData[rowIndex][columnIndex] = newValue;
+//         setData(newData);
+
+//         // Apply filters again to update filtered data if needed
+//         applyFilters();
+//     };
+
+//     // Function to check if the new value is valid for the expected data type
+//     const isValidValue = (value, type) => {
+//         if (type === 'number') {
+//             return !isNaN(parseFloat(value)) && isFinite(value);
+//         } else if (type === 'date') {
+//             return isValidDate(value);
+//         } else {
+//             // Default to string type
+//             return true;
+//         }
+//     };
+
+//     // Function to add a new row
+//     const addNewRow = () => {
+//         // Create a new row with empty values
+//         const newRow = Array(headers.length).fill('');
+//         const newData = [...data, newRow];
+//         setData(newData);
+//         setFilteredData(newData);
+//     };
+
+//     // Export data to Excel file
+//     const exportToExcel = (dataToExport, fileName) => {
+//         const combinedData = [headers, ...dataToExport];
+//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
+
+//         // Apply date formats to worksheet
+//         dateColumns.forEach(({ index, format }) => {
+//             const colRef = XLSX.utils.encode_col(index);
+//             worksheet[`!cols`] = worksheet[`!cols`] || [];
+//             worksheet[`!cols`][index] = { z: format };
+//         });
+
+//         const workbook = XLSX.utils.book_new();
+//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+//         XLSX.writeFile(workbook, fileName);
+//     };
+
+//     return (
+//         <div>
+//             <h1>Excel Editor</h1>
+//             <input type="file" onChange={handleFileUpload} />
+
+//             {/* Render filter inputs above each column */}
+//             <div className="filters">
+//                 {filters.map((filter, index) => (
+//                     <input
+//                         key={index}
+//                         type="text"
+//                         placeholder={`Filter column ${index + 1}`}
+//                         value={filter}
+//                         onChange={(e) => {
+//                             const newFilters = [...filters];
+//                             newFilters[index] = e.target.value;
+//                             setFilters(newFilters);
+//                         }}
+//                     />
+//                 ))}
+//                 {/* Button to apply filters */}
+//                 <button onClick={applyFilters}>Apply Filters</button>
+//             </div>
+
+//             {/* Buttons to export data */}
+//             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
+//                 Export Filtered Data
+//             </button>
+//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
+//                 Export Complete Data
+//             </button>
+
+//             {/* Button to add a new row */}
+//             <button onClick={addNewRow}>Add New Row</button>
+
+//             {/* Render table */}
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         {/* Render column headers */}
+//                         {headers.map((header, index) => (
+//                             <th key={index}>{header}</th>
+//                         ))}
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {/* Render filtered data */}
+//                     {filteredData.map((row, rowIndex) => (
+//                         <tr key={rowIndex}>
+//                             {row.map((cell, columnIndex) => {
+//                                 const expectedType = columnTypes[columnIndex];
+//                                 const isDateColumn = expectedType === 'date';
+//                                 let formattedCell = cell;
+//                                 if (isDateColumn && cell) {
+//                                     const dateColumn = dateColumns.find(col => col.index === columnIndex);
+//                                     if (dateColumn) {
+//                                         const parsedDate = new Date(cell);
+//                                         formattedCell = !isNaN(parsedDate) ? XLSX.SSF.format(dateColumn.format, parsedDate) : cell;
+//                                     }
+//                                 }
+
+//                                 return (
+//                                     <td key={columnIndex}>
+//                                         <input
+//                                             type="text"
+//                                             value={formattedCell}
+//                                             onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                         />
+//                                     </td>
+//                                 );
+//                             })}
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+// }
+
+// export default ExcelEditor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState } from 'react';
+// import * as XLSX from 'xlsx';
+// import './excelEditor.css';
+
+// function ExcelEditor() {
+//     const [headers, setHeaders] = useState([]);
+//     const [data, setData] = useState([]);
+//     const [filteredData, setFilteredData] = useState([]);
+//     const [filters, setFilters] = useState([]);
+//     const [columnTypes, setColumnTypes] = useState([]);
+//     const [dateColumns, setDateColumns] = useState([]);
+
+//     // Handle file upload and read data
+//     const handleFileUpload = (e) => {
+//         const file = e.target.files[0];
+//         const reader = new FileReader();
+
+//         reader.onload = (event) => {
+//             const binaryString = event.target.result;
+//             const workbook = XLSX.read(binaryString, { type: 'binary' });
+//             const sheetName = workbook.SheetNames[0];
+//             const worksheet = workbook.Sheets[sheetName];
+//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+//             // Extract headers (first row) and data rows
+//             const headers = excelData[0];
+//             const dataRows = excelData.slice(1);
+
+//             // Set headers, data, and filtered data
+//             setHeaders(headers);
+//             setData(dataRows);
+//             setFilteredData(dataRows);
+
+//             // Initialize filters with empty values
+//             setFilters(Array(headers.length).fill(''));
+
+//             // Determine column types and date columns
+//             setColumnTypes(determineColumnTypes(dataRows));
+//             setDateColumns(determineDateColumns(headers, worksheet));
+//         };
+
+//         reader.readAsBinaryString(file);
+//     };
+
+//     // Function to determine column types based on data rows
+//     const determineColumnTypes = (dataRows) => {
+//         const types = [];
+//         if (dataRows.length > 0) {
+//             dataRows[0].forEach((cell, index) => {
+//                 if (typeof cell === 'number') {
+//                     types.push('number');
+//                 } else if (isValidDate(cell)) {
+//                     types.push('date');
+//                 } else {
+//                     types.push('string');
+//                 }
+//             });
+//         }
+//         return types;
+//     };
+
+//     // Function to determine date columns and their formats
+//     const determineDateColumns = (headers, worksheet) => {
+//         const dateColumns = [];
+//         headers.forEach((header, index) => {
+//             const col = XLSX.utils.encode_col(index);
+//             const dateFormat = worksheet[col + '2']; // Check the format in the first data row
+//             if (dateFormat && dateFormat.z && (dateFormat.z.includes('d') || dateFormat.z.includes('m') || dateFormat.z.includes('y'))) {
+//                 dateColumns.push({ index, format: dateFormat.z });
+//             }
+//         });
+//         return dateColumns;
+//     };
+
+//     // Helper function to check if a value is a valid date
+//     const isValidDate = (value) => {
+//         const date = new Date(value);
+//         return !isNaN(date.getTime());
+//     };
+
+//     // Apply filters to the data
+//     const applyFilters = () => {
+//         const filtered = data.filter(row =>
+//             row.every((cell, index) => {
+//                 if (filters[index] === '') {
+//                     return true;
+//                 }
+//                 return String(cell).toLowerCase().includes(filters[index].toLowerCase());
+//             })
+//         );
+//         setFilteredData(filtered);
+//     };
+
+//     // Handle cell change with data validation and date formatting
+//     const handleCellChange = (e, rowIndex, columnIndex) => {
+//         let newValue = e.target.value;
+//         const expectedType = columnTypes[columnIndex];
+
+//         // Validate the new cell value based on expected data type
+//         if (!isValidValue(newValue, expectedType)) {
+//             alert(`Invalid input! Expected a value of type ${expectedType}.`);
+//             return;
+//         }
+
+//         // If the column is a date column, try parsing and formatting the date
+//         if (expectedType === 'date') {
+//             const parsedDate = new Date(newValue);
+//             if (!isNaN(parsedDate)) {
+//                 const dateColumn = dateColumns.find(col => col.index === columnIndex);
+//                 if (dateColumn) {
+//                     // Use XLSX SSF format to convert the date to the expected format
+//                     newValue = XLSX.SSF.format(dateColumn.format, parsedDate);
+//                 }
+//             }
+//         }
+
+//         // Update data state with the new value
+//         const newData = [...data];
+//         newData[rowIndex][columnIndex] = newValue;
+//         setData(newData);
+//         applyFilters();
+//     };
+
+//     // Function to check if the new value is valid for the expected data type
+//     const isValidValue = (value, type) => {
+//         if (type === 'number') {
+//             return !isNaN(parseFloat(value)) && isFinite(value);
+//         } else if (type === 'date') {
+//             return isValidDate(value);
+//         } else {
+//             return true;
+//         }
+//     };
+
+//     // Function to add a new row
+//     const addNewRow = () => {
+//         const newRow = Array(headers.length).fill('');
+//         const newData = [...data, newRow];
+//         setData(newData);
+//         setFilteredData(newData);
+//     };
+
+//     // Export data to Excel file
+//     const exportToExcel = (dataToExport, fileName) => {
+//         const combinedData = [headers, ...dataToExport];
+//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
+
+//         // Apply date formats to worksheet columns
+//         dateColumns.forEach(({ index, format }) => {
+//             const colRef = XLSX.utils.encode_col(index);
+//             worksheet[`!cols`] = worksheet[`!cols`] || [];
+//             worksheet[`!cols`][index] = { z: format };
+//         });
+
+//         const workbook = XLSX.utils.book_new();
+//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+//         XLSX.writeFile(workbook, fileName);
+//     };
+
+//     return (
+//         <div>
+//             <h1>Excel Editor</h1>
+//             <input type="file" onChange={handleFileUpload} />
+
+//             {/* Render filter inputs above each column */}
+//             <div className="filters">
+//                 {filters.map((filter, index) => (
+//                     <input
+//                         key={index}
+//                         type="text"
+//                         placeholder={`Filter column ${index + 1}`}
+//                         value={filter}
+//                         onChange={(e) => {
+//                             const newFilters = [...filters];
+//                             newFilters[index] = e.target.value;
+//                             setFilters(newFilters);
+//                         }}
+//                     />
+//                 ))}
+//                 {/* Button to apply filters */}
+//                 <button onClick={applyFilters}>Apply Filters</button>
+//             </div>
+
+//             {/* Buttons to export data */}
+//             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
+//                 Export Filtered Data
+//             </button>
+//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
+//                 Export Complete Data
+//             </button>
+
+//             {/* Button to add a new row */}
+//             <button onClick={addNewRow}>Add New Row</button>
+
+//             {/* Render table */}
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         {headers.map((header, index) => (
+//                             <th key={index}>{header}</th>
+//                         ))}
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {filteredData.map((row, rowIndex) => (
+//                         <tr key={rowIndex}>
+//                             {row.map((cell, columnIndex) => {
+//                                 let formattedCell = cell;
+//                                 const expectedType = columnTypes[columnIndex];
+
+//                                 if (expectedType === 'date' && cell) {
+//                                     const dateColumn = dateColumns.find(col => col.index === columnIndex);
+//                                     if (dateColumn) {
+//                                         const parsedDate = new Date(cell);
+//                                         if (!isNaN(parsedDate)) {
+//                                             formattedCell = XLSX.SSF.format(dateColumn.format, parsedDate);
+//                                         }
+//                                     }
+//                                 }
+
+//                                 return (
+//                                     <td key={columnIndex}>
+//                                         <input
+//                                             type="text"
+//                                             value={formattedCell}
+//                                             onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                         />
+//                                     </td>
+//                                 );
+//                             })}
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+// }
+
+// export default ExcelEditor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState } from 'react';
+// import * as XLSX from 'xlsx';
+// import './excelEditor.css';
+
+// function ExcelEditor() {
+//     const [headers, setHeaders] = useState([]);
+//     const [data, setData] = useState([]);
+//     const [filteredData, setFilteredData] = useState([]);
+//     const [filters, setFilters] = useState([]);
+//     const [columnTypes, setColumnTypes] = useState([]);
+
+//     // Handle file upload and read data
+//     const handleFileUpload = (e) => {
+//         const file = e.target.files[0];
+//         const reader = new FileReader();
+
+//         reader.onload = (event) => {
+//             const binaryString = event.target.result;
+//             const workbook = XLSX.read(binaryString, { type: 'binary' });
+//             const sheetName = workbook.SheetNames[0];
+//             const worksheet = workbook.Sheets[sheetName];
+//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+//             // Extract headers (first row) and data rows
+//             const headers = excelData[0];
+//             const dataRows = excelData.slice(1);
+
+//             // Determine column types and data rows formatting
+//             const { types, formattedData } = processExcelData(dataRows, worksheet);
+
+//             // Set headers, data, and filtered data
+//             setHeaders(headers);
+//             setData(formattedData);
+//             setFilteredData(formattedData);
+
+//             // Initialize filters with empty values
+//             setFilters(Array(headers.length).fill(''));
+
+//             // Set column types
+//             setColumnTypes(types);
+//         };
+
+//         reader.readAsBinaryString(file);
+//     };
+
+//     // Process Excel data rows: determine column types and convert date/number columns
+//     const processExcelData = (dataRows, worksheet) => {
+//         const types = [];
+//         const formattedData = [];
+
+//         // Iterate through each column
+//         for (let colIndex = 0; colIndex < dataRows[0].length; colIndex++) {
+//             const cellFormat = worksheet[XLSX.utils.encode_cell({ c: colIndex, r: 1 })] ? worksheet[XLSX.utils.encode_cell({ c: colIndex, r: 1 })].z : null;
+//             let columnType = 'string';
+
+//             if (cellFormat && (cellFormat.includes('d') || cellFormat.includes('m') || cellFormat.includes('y'))) {
+//                 columnType = 'date';
+//             } else if (cellFormat && cellFormat.includes('0')) {
+//                 columnType = 'number';
+//             }
+
+//             types.push(columnType);
+
+//             // Format data based on column type and Excel format
+//             formattedData.forEach((row, rowIndex) => {
+//                 const cell = dataRows[rowIndex][colIndex];
+//                 let formattedCell = cell;
+
+//                 if (columnType === 'date') {
+//                     formattedCell = formatExcelDate(cell);
+//                 } else if (columnType === 'number') {
+//                     formattedCell = formatExcelNumber(cell, cellFormat);
+//                 }
+
+//                 row[colIndex] = formattedCell;
+//             });
+//         }
+
+//         // Convert data rows
+//         dataRows.forEach((row, rowIndex) => {
+//             formattedData[rowIndex] = row.map((cell, colIndex) => {
+//                 const type = types[colIndex];
+//                 if (type === 'date') {
+//                     return formatExcelDate(cell);
+//                 } else if (type === 'number') {
+//                     return formatExcelNumber(cell);
+//                 } else {
+//                     return cell;
+//                 }
+//             });
+//         });
+
+//         return { types, formattedData };
+//     };
+
+//     // Format Excel date cell
+//     const formatExcelDate = (cell) => {
+//         const date = new Date(cell);
+//         if (!isNaN(date.getTime())) {
+//             return date.toISOString().slice(0, 10);
+//         }
+//         return cell;
+//     };
+
+//     // Format Excel number cell
+//     const formatExcelNumber = (cell, format) => {
+//         const number = parseFloat(cell);
+//         if (!isNaN(number)) {
+//             return number;
+//         }
+//         return cell;
+//     };
+
+//     // Apply filters to the data
+//     const applyFilters = () => {
+//         const filtered = data.filter(row =>
+//             row.every((cell, index) => {
+//                 if (filters[index] === '') {
+//                     return true;
+//                 }
+//                 return String(cell).toLowerCase().includes(filters[index].toLowerCase());
+//             })
+//         );
+//         setFilteredData(filtered);
+//     };
+
+//     // Handle cell change with data validation and update data state
+//     const handleCellChange = (e, rowIndex, columnIndex) => {
+//         let newValue = e.target.value;
+//         const expectedType = columnTypes[columnIndex];
+
+//         // Validate new value based on expected data type
+//         if (!isValidValue(newValue, expectedType)) {
+//             alert(`Invalid input! Expected a value of type ${expectedType}.`);
+//             return;
+//         }
+
+//         // Format new value based on type
+//         if (expectedType === 'date') {
+//             const date = new Date(newValue);
+//             if (!isNaN(date.getTime())) {
+//                 newValue = date.toISOString().slice(0, 10);
+//             } else {
+//                 alert('Invalid date format! Please enter a valid date.');
+//                 return;
+//             }
+//         } else if (expectedType === 'number') {
+//             newValue = parseFloat(newValue);
+//             if (isNaN(newValue)) {
+//                 alert('Invalid number format! Please enter a valid number.');
+//                 return;
+//             }
+//         }
+
+//         // Update data state with the new value
+//         const newData = [...data];
+//         newData[rowIndex][columnIndex] = newValue;
+//         setData(newData);
+//         applyFilters();
+//     };
+
+//     // Validate value based on expected data type
+//     const isValidValue = (value, type) => {
+//         if (type === 'number') {
+//             return !isNaN(parseFloat(value)) && isFinite(value);
+//         } else if (type === 'date') {
+//             const date = new Date(value);
+//             return !isNaN(date.getTime());
+//         } else {
+//             return true;
+//         }
+//     };
+
+//     // Add a new row with empty values
+//     const addNewRow = () => {
+//         const newRow = Array(headers.length).fill('');
+//         setData([...data, newRow]);
+//         setFilteredData([...filteredData, newRow]);
+//     };
+
+//     // Export data to an Excel file
+//     const exportToExcel = (dataToExport, fileName) => {
+//         const combinedData = [headers, ...dataToExport];
+//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
+//         const workbook = XLSX.utils.book_new();
+//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+//         XLSX.writeFile(workbook, fileName);
+//     };
+
+//     return (
+//         <div>
+//             <h1>Excel Editor</h1>
+//             <input type="file" onChange={handleFileUpload} />
+
+//             {/* Render filter inputs above each column */}
+//             <div className="filters">
+//                 {filters.map((filter, index) => (
+//                     <input
+//                         key={index}
+//                         type="text"
+//                         placeholder={`Filter column ${index + 1}`}
+//                         value={filter}
+//                         onChange={(e) => {
+//                             const newFilters = [...filters];
+//                             newFilters[index] = e.target.value;
+//                             setFilters(newFilters);
+//                         }}
+//                     />
+//                 ))}
+//                 {/* Button to apply filters */}
+//                 <button onClick={applyFilters}>Apply Filters</button>
+//             </div>
+
+//             {/* Buttons to export data */}
+//             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
+//                 Export Filtered Data
+//             </button>
+//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
+//                 Export Complete Data
+//             </button>
+
+//             {/* Button to add a new row */}
+//             <button onClick={addNewRow}>Add New Row</button>
+
+//             {/* Render table */}
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         {/* Render column headers */}
+//                         {headers.map((header, index) => (
+//                             <th key={index}>{header}</th>
+//                         ))}
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {/* Render filtered data */}
+//                     {filteredData.map((row, rowIndex) => (
+//                         <tr key={rowIndex}>
+//                             {row.map((cell, columnIndex) => {
+//                                 // Display date columns as date inputs
+//                                 if (columnTypes[columnIndex] === 'date') {
+//                                     return (
+//                                         <td key={columnIndex}>
+//                                             <input
+//                                                 type="date"
+//                                                 value={cell}
+//                                                 onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                             />
+//                                         </td>
+//                                     );
+//                                 } else if (columnTypes[columnIndex] === 'number') {
+//                                     // Display number columns as number inputs
+//                                     return (
+//                                         <td key={columnIndex}>
+//                                             <input
+//                                                 type="number"
+//                                                 value={cell}
+//                                                 onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                             />
+//                                         </td>
+//                                     );
+//                                 } else {
+//                                     // Display other columns as text inputs
+//                                     return (
+//                                         <td key={columnIndex}>
+//                                             <input
+//                                                 type="text"
+//                                                 value={cell}
+//                                                 onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                             />
+//                                         </td>
+//                                     );
+//                                 }
+//                             })}
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+// }
+
+// export default ExcelEditor;

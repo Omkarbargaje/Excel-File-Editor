@@ -1,69 +1,105 @@
-/* ExcelEditor.css */
-
-/* Main container */
+/* Container styles */
 div {
-    padding: 20px;
-    font-family: Arial, sans-serif;
+    margin: 20px;
+    font-family: 'Arial', sans-serif;
+    color: #333;
 }
 
-/* File input */
-input[type="file"] {
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-/* Filter input fields */
-.filters input {
-    margin-right: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-/* Table styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+/* Heading styles */
+h1 {
+    text-align: center;
+    color: #2c3e50;
     margin-bottom: 20px;
 }
 
-/* Table headers */
-table th {
-    padding: 10px;
-    background-color: #f2f2f2;
-    border: 1px solid #ccc;
+/* File input styles */
+input[type="file"] {
+    margin-bottom: 20px;
+    display: block;
+    margin: 0 auto;
 }
 
-/* Table rows and cells */
-table td {
-    padding: 10px;
-    border: 1px solid #ccc;
-}
-
-/* Input fields inside cells */
-table input[type="text"] {
-    width: 100%;
+/* Filter input and buttons */
+.filters input {
+    width: 150px;
     padding: 5px;
+    margin: 5px 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box;
+    font-size: 14px;
+    transition: border-color 0.3s;
 }
 
-/* Buttons */
-button {
-    margin-right: 10px;
-    padding: 8px 12px;
+.filters input:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.filters button {
+    padding: 6px 12px;
+    margin: 10px;
+    background-color: #3498db;
+    color: white;
     border: none;
     border-radius: 4px;
-    background-color: #007BFF;
-    color: white;
     cursor: pointer;
-    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.filters button:hover {
+    background-color: #2980b9;
+}
+
+/* Export and add row buttons */
+button {
+    padding: 6px 12px;
+    margin: 10px;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #3ce750;
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+}
+
+td input {
+    width: 100%;
+    padding: 4px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #333;
+}
+
+td input:focus {
+    border-bottom: 1px solid #3498db;
+}
+
+/* Hover effect for table rows */
+tbody tr:hover {
+    background-color: #f5f5f5;
 }
