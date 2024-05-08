@@ -1,143 +1,143 @@
-// import React, { useState } from 'react';
-// import * as XLSX from 'xlsx';
-// import './excelEditor.css';
+import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
+import './excelEditor.css';
 
-// function ExcelEditor() {
-//     const [headers, setHeaders] = useState([]);
-//     const [data, setData] = useState([]);
-//     const [filteredData, setFilteredData] = useState([]);
-//     const [filters, setFilters] = useState([]);
+function ExcelEditor() {
+    const [headers, setHeaders] = useState([]);
+    const [data, setData] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
+    const [filters, setFilters] = useState([]);
 
-//     // Handle file upload and read data
-//     const handleFileUpload = (e) => {
-//         const file = e.target.files[0];
-//         const reader = new FileReader();
+    // Handle file upload and read data
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
 
-//         reader.onload = (event) => {
-//             const binaryString = event.target.result;
-//             const workbook = XLSX.read(binaryString, { type: 'binary' });
-//             const sheetName = workbook.SheetNames[0];
-//             const worksheet = workbook.Sheets[sheetName];
-//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        reader.onload = (event) => {
+            const binaryString = event.target.result;
+            const workbook = XLSX.read(binaryString, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-//             // Extract headers (first row) and data rows
-//             const headers = excelData[0];
-//             const dataRows = excelData.slice(1);
+            // Extract headers (first row) and data rows
+            const headers = excelData[0];
+            const dataRows = excelData.slice(1);
 
-//             // Set the headers, data, and filtered data
-//             setHeaders(headers);
-//             setData(dataRows);
-//             setFilteredData(dataRows);
+            // Set the headers, data, and filtered data
+            setHeaders(headers);
+            setData(dataRows);
+            setFilteredData(dataRows);
 
-//             // Initialize filters with empty values
-//             setFilters(Array(headers.length).fill(''));
-//         };
+            // Initialize filters with empty values
+            setFilters(Array(headers.length).fill(''));
+        };
 
-//         reader.readAsBinaryString(file);
-//     };
+        reader.readAsBinaryString(file);
+    };
 
-//     // Apply filters to the data
-//     const applyFilters = () => {
-//         // Filter data based on filters state
-//         const filtered = data.filter(row =>
-//             row.every((cell, index) => {
-//                 // If filter is empty, consider it as a match
-//                 if (filters[index] === '') {
-//                     return true;
-//                 }
-//                 // Perform case-insensitive comparison for the filter
-//                 return String(cell).toLowerCase().includes(filters[index].toLowerCase());
-//             })
-//         );
-//         setFilteredData(filtered);
-//     };
+    // Apply filters to the data
+    const applyFilters = () => {
+        // Filter data based on filters state
+        const filtered = data.filter(row =>
+            row.every((cell, index) => {
+                // If filter is empty, consider it as a match
+                if (filters[index] === '') {
+                    return true;
+                }
+                // Perform case-insensitive comparison for the filter
+                return String(cell).toLowerCase().includes(filters[index].toLowerCase());
+            })
+        );
+        setFilteredData(filtered);
+    };
 
-//     // Handle cell change with data validation
-//     const handleCellChange = (e, rowIndex, columnIndex) => {
-//         const newValue = e.target.value;
+    // Handle cell change with data validation
+    const handleCellChange = (e, rowIndex, columnIndex) => {
+        const newValue = e.target.value;
 
-//         // Update data state with the new value
-//         const newData = [...data];
-//         newData[rowIndex][columnIndex] = newValue;
-//         setData(newData);
+        // Update data state with the new value
+        const newData = [...data];
+        newData[rowIndex][columnIndex] = newValue;
+        setData(newData);
 
-//         // Apply filters again to update filtered data if needed
-//         applyFilters();
-//     };
+        // Apply filters again to update filtered data if needed
+        applyFilters();
+    };
 
-//     // Export data to Excel file
-//     const exportToExcel = (dataToExport, fileName) => {
-//         const combinedData = [headers, ...dataToExport];
-//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
-//         const workbook = XLSX.utils.book_new();
-//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-//         XLSX.writeFile(workbook, fileName);
-//     };
+    // Export data to Excel file
+    const exportToExcel = (dataToExport, fileName) => {
+        const combinedData = [headers, ...dataToExport];
+        const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+        XLSX.writeFile(workbook, fileName);
+    };
 
-//     return (
-//         <div>
-//             <h1>Excel Editor</h1>
-//             <input type="file" onChange={handleFileUpload} />
+    return (
+        <div>
+            <h1>Excel Editor</h1>
+            <input type="file" onChange={handleFileUpload} />
 
-//             {/* Render filter inputs above each column */}
-//             <div className="filters">
-//                 {filters.map((filter, index) => (
-//                     <input
-//                         key={index}
-//                         type="text"
-//                         placeholder={`Filter column ${index + 1}`}
-//                         value={filter}
-//                         onChange={(e) => {
-//                             // Update filters
-//                             const newFilters = [...filters];
-//                             newFilters[index] = e.target.value;
-//                             setFilters(newFilters);
-//                         }}
-//                     />
-//                 ))}
-//                 {/* Button to apply filters */}
-//                 <button onClick={applyFilters}>Apply Filters</button>
-//             </div>
-//              {/* Buttons to export data */}
-//              <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
-//                 Export Filtered Data
-//             </button>
-//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
-//                 Export Complete Data
-//             </button>
+            {/* Render filter inputs above each column */}
+            <div className="filters">
+                {filters.map((filter, index) => (
+                    <input
+                        key={index}
+                        type="text"
+                        placeholder={`Filter column ${index + 1}`}
+                        value={filter}
+                        onChange={(e) => {
+                            // Update filters
+                            const newFilters = [...filters];
+                            newFilters[index] = e.target.value;
+                            setFilters(newFilters);
+                        }}
+                    />
+                ))}
+                {/* Button to apply filters */}
+                <button onClick={applyFilters}>Apply Filters</button>
+            </div>
+             {/* Buttons to export data */}
+             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
+                Export Filtered Data
+            </button>
+            <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
+                Export Complete Data
+            </button>
 
-//             {/* Render table */}
-//             <table>
-//                 <thead>
-//                     <tr>
-//                         {/* Render column headers */}
-//                         {headers.map((header, index) => (
-//                             <th key={index}>{header}</th>
-//                         ))}
-//                     </tr>
-//                 </thead>
-//                 <tbody>
-//                     {/* Render filtered data */}
-//                     {filteredData.map((row, rowIndex) => (
-//                         <tr key={rowIndex}>
-//                             {row.map((cell, columnIndex) => (
-//                                 <td key={columnIndex}>
-//                                     <input
-//                                         type="text"
-//                                         value={cell}
-//                                         onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
-//                                     />
-//                                 </td>
-//                             ))}
-//                         </tr>
-//                     ))}
-//                 </tbody>
-//             </table>
-//         </div>
-//     );
-// }
+            {/* Render table */}
+            <table>
+                <thead>
+                    <tr>
+                        {/* Render column headers */}
+                        {headers.map((header, index) => (
+                            <th key={index}>{header}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {/* Render filtered data */}
+                    {filteredData.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                            {row.map((cell, columnIndex) => (
+                                <td key={columnIndex}>
+                                    <input
+                                        type="text"
+                                        value={cell}
+                                        onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+                                    />
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
 
-// export default ExcelEditor;
+export default ExcelEditor;
 
 
 
@@ -2183,258 +2183,258 @@
 
 
 
-import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
-import './excelEditor.css';
+// import React, { useState } from 'react';
+// import * as XLSX from 'xlsx';
+// import './excelEditor.css';
 
-function ExcelEditor() {
-    const [headers, setHeaders] = useState([]);
-    const [data, setData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
-    const [filters, setFilters] = useState([]);
-    const [columnTypes, setColumnTypes] = useState([]);
+// function ExcelEditor() {
+//     const [headers, setHeaders] = useState([]);
+//     const [data, setData] = useState([]);
+//     const [filteredData, setFilteredData] = useState([]);
+//     const [filters, setFilters] = useState([]);
+//     const [columnTypes, setColumnTypes] = useState([]);
 
-    // Handle file upload and read data
-    const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
+//     // Handle file upload and read data
+//     const handleFileUpload = (e) => {
+//         const file = e.target.files[0];
+//         const reader = new FileReader();
 
-        reader.onload = (event) => {
-            const binaryString = event.target.result;
-            const workbook = XLSX.read(binaryString, { type: 'binary' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+//         reader.onload = (event) => {
+//             const binaryString = event.target.result;
+//             const workbook = XLSX.read(binaryString, { type: 'binary' });
+//             const sheetName = workbook.SheetNames[0];
+//             const worksheet = workbook.Sheets[sheetName];
+//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-            // Extract headers (first row) and data rows
-            const headers = excelData[0];
-            const dataRows = excelData.slice(1);
+//             // Extract headers (first row) and data rows
+//             const headers = excelData[0];
+//             const dataRows = excelData.slice(1);
 
-            // Determine column types and convert data
-            const { types, convertedData } = determineColumnTypesAndConvertData(dataRows);
+//             // Determine column types and convert data
+//             const { types, convertedData } = determineColumnTypesAndConvertData(dataRows);
 
-            // Set headers, data, and filtered data
-            setHeaders(headers);
-            setData(convertedData);
-            setFilteredData(convertedData);
-            setFilters(Array(headers.length).fill(''));
-            setColumnTypes(types);
-        };
+//             // Set headers, data, and filtered data
+//             setHeaders(headers);
+//             setData(convertedData);
+//             setFilteredData(convertedData);
+//             setFilters(Array(headers.length).fill(''));
+//             setColumnTypes(types);
+//         };
 
-        reader.readAsBinaryString(file);
-    };
+//         reader.readAsBinaryString(file);
+//     };
 
-    // Determine column types and convert data
-    const determineColumnTypesAndConvertData = (dataRows) => {
-        const numRowsToCheck = 10; // Number of rows to check to determine column type
-        const columnCount = dataRows[0].length;
-        const columnTypes = Array(columnCount).fill('string'); // Default type is string
-        const columnChecks = Array.from({ length: columnCount }, () => ({
-            dateCount: 0,
-            numCount: 0,
-        }));
+//     // Determine column types and convert data
+//     const determineColumnTypesAndConvertData = (dataRows) => {
+//         const numRowsToCheck = 10; // Number of rows to check to determine column type
+//         const columnCount = dataRows[0].length;
+//         const columnTypes = Array(columnCount).fill('string'); // Default type is string
+//         const columnChecks = Array.from({ length: columnCount }, () => ({
+//             dateCount: 0,
+//             numCount: 0,
+//         }));
 
-        // Analyze first few rows to determine types
-        for (let i = 0; i < numRowsToCheck && i < dataRows.length; i++) {
-            dataRows[i].forEach((cell, index) => {
-                if (isDateString(cell)) {
-                    columnChecks[index].dateCount++;
-                } else if (isNumber(cell)) {
-                    columnChecks[index].numCount++;
-                }
-            });
-        }
+//         // Analyze first few rows to determine types
+//         for (let i = 0; i < numRowsToCheck && i < dataRows.length; i++) {
+//             dataRows[i].forEach((cell, index) => {
+//                 if (isDateString(cell)) {
+//                     columnChecks[index].dateCount++;
+//                 } else if (isNumber(cell)) {
+//                     columnChecks[index].numCount++;
+//                 }
+//             });
+//         }
 
-        // Classify columns based on highest proportion
-        columnChecks.forEach((check, index) => {
-            if (check.dateCount > check.numCount && check.dateCount > numRowsToCheck / 2) {
-                columnTypes[index] = 'date';
-            } else if (check.numCount > check.dateCount && check.numCount > numRowsToCheck / 2) {
-                columnTypes[index] = 'number';
-            }
-        });
+//         // Classify columns based on highest proportion
+//         columnChecks.forEach((check, index) => {
+//             if (check.dateCount > check.numCount && check.dateCount > numRowsToCheck / 2) {
+//                 columnTypes[index] = 'date';
+//             } else if (check.numCount > check.dateCount && check.numCount > numRowsToCheck / 2) {
+//                 columnTypes[index] = 'number';
+//             }
+//         });
 
-        // Convert data rows based on determined column types
-        const convertedData = dataRows.map(row =>
-            row.map((cell, index) => convertCellValue(cell, columnTypes[index]))
-        );
+//         // Convert data rows based on determined column types
+//         const convertedData = dataRows.map(row =>
+//             row.map((cell, index) => convertCellValue(cell, columnTypes[index]))
+//         );
 
-        return { types: columnTypes, convertedData };
-    };
+//         return { types: columnTypes, convertedData };
+//     };
 
-    // Check if the cell is a valid date string
-    const isDateString = (cell) => {
-        if (typeof cell === 'string' || typeof cell === 'number') {
-            const date = new Date(cell);
-            return !isNaN(date.getTime());
-        }
-        return false;
-    };
+//     // Check if the cell is a valid date string
+//     const isDateString = (cell) => {
+//         if (typeof cell === 'string' || typeof cell === 'number') {
+//             const date = new Date(cell);
+//             return !isNaN(date.getTime());
+//         }
+//         return false;
+//     };
 
-    // Check if the cell is a valid number
-    const isNumber = (cell) => {
-        const parsedNumber = parseFloat(cell);
-        return !isNaN(parsedNumber) && isFinite(parsedNumber);
-    };
+//     // Check if the cell is a valid number
+//     const isNumber = (cell) => {
+//         const parsedNumber = parseFloat(cell);
+//         return !isNaN(parsedNumber) && isFinite(parsedNumber);
+//     };
 
-    // Convert cell value based on column type
-    const convertCellValue = (cell, type) => {
-        if (type === 'date') {
-            const date = new Date(cell);
-            if (!isNaN(date.getTime())) {
-                return date.toISOString().slice(0, 10); // Convert to YYYY-MM-DD format
-            }
-        } else if (type === 'number') {
-            const parsedNumber = parseFloat(cell);
-            if (!isNaN(parsedNumber)) {
-                return parsedNumber;
-            }
-        }
-        return cell; // Otherwise, return as is
-    };
+//     // Convert cell value based on column type
+//     const convertCellValue = (cell, type) => {
+//         if (type === 'date') {
+//             const date = new Date(cell);
+//             if (!isNaN(date.getTime())) {
+//                 return date.toISOString().slice(0, 10); // Convert to YYYY-MM-DD format
+//             }
+//         } else if (type === 'number') {
+//             const parsedNumber = parseFloat(cell);
+//             if (!isNaN(parsedNumber)) {
+//                 return parsedNumber;
+//             }
+//         }
+//         return cell; // Otherwise, return as is
+//     };
 
-    // Apply filters to the data
-    const applyFilters = () => {
-        const filtered = data.filter((row) =>
-            row.every((cell, index) => {
-                const filter = filters[index].toLowerCase();
-                return !filter || String(cell).toLowerCase().includes(filter);
-            })
-        );
-        setFilteredData(filtered);
-    };
+//     // Apply filters to the data
+//     const applyFilters = () => {
+//         const filtered = data.filter((row) =>
+//             row.every((cell, index) => {
+//                 const filter = filters[index].toLowerCase();
+//                 return !filter || String(cell).toLowerCase().includes(filter);
+//             })
+//         );
+//         setFilteredData(filtered);
+//     };
 
-    // Handle cell change with data validation
-    const handleCellChange = (e, rowIndex, columnIndex) => {
-        const newValue = e.target.value;
-        const expectedType = columnTypes[columnIndex];
+//     // Handle cell change with data validation
+//     const handleCellChange = (e, rowIndex, columnIndex) => {
+//         const newValue = e.target.value;
+//         const expectedType = columnTypes[columnIndex];
 
-        // Validate the new cell value based on expected data type
-        if (!isValidValue(newValue, expectedType)) {
-            alert(`Invalid input! Expected a value of type ${expectedType}.`);
-            return;
-        }
+//         // Validate the new cell value based on expected data type
+//         if (!isValidValue(newValue, expectedType)) {
+//             alert(`Invalid input! Expected a value of type ${expectedType}.`);
+//             return;
+//         }
 
-        // Convert input value to the expected data type
-        let convertedValue;
+//         // Convert input value to the expected data type
+//         let convertedValue;
 
-        if (expectedType === 'number') {
-            convertedValue = parseFloat(newValue);
-        } else if (expectedType === 'date') {
-            const date = new Date(newValue);
-            if (isNaN(date.getTime())) {
-                alert('Invalid date format! Please enter a valid date in the format YYYY-MM-DD.');
-                return;
-            }
-            convertedValue = date.toISOString().slice(0, 10);
-        } else {
-            convertedValue = newValue;
-        }
+//         if (expectedType === 'number') {
+//             convertedValue = parseFloat(newValue);
+//         } else if (expectedType === 'date') {
+//             const date = new Date(newValue);
+//             if (isNaN(date.getTime())) {
+//                 alert('Invalid date format! Please enter a valid date in the format YYYY-MM-DD.');
+//                 return;
+//             }
+//             convertedValue = date.toISOString().slice(0, 10);
+//         } else {
+//             convertedValue = newValue;
+//         }
 
-        // Update data state with the new value
-        const updatedData = [...data];
-        updatedData[rowIndex][columnIndex] = convertedValue;
-        setData(updatedData);
-        applyFilters(); // Apply filters after updating data
-    };
+//         // Update data state with the new value
+//         const updatedData = [...data];
+//         updatedData[rowIndex][columnIndex] = convertedValue;
+//         setData(updatedData);
+//         applyFilters(); // Apply filters after updating data
+//     };
 
-    // Check if the new value is valid for the expected data type
-    const isValidValue = (value, type) => {
-        if (type === 'number') {
-            return isNumber(value);
-        } else if (type === 'date') {
-            return isDateString(value);
-        }
-        return true; // For string type
-    };
+//     // Check if the new value is valid for the expected data type
+//     const isValidValue = (value, type) => {
+//         if (type === 'number') {
+//             return isNumber(value);
+//         } else if (type === 'date') {
+//             return isDateString(value);
+//         }
+//         return true; // For string type
+//     };
 
-    // Add a new row with empty cells
-    const addNewRow = () => {
-        const newRow = Array(headers.length).fill('');
-        setData((prevData) => [...prevData, newRow]);
-        setFilteredData((prevData) => [...prevData, newRow]);
-    };
+//     // Add a new row with empty cells
+//     const addNewRow = () => {
+//         const newRow = Array(headers.length).fill('');
+//         setData((prevData) => [...prevData, newRow]);
+//         setFilteredData((prevData) => [...prevData, newRow]);
+//     };
 
-    // Export data to Excel file
-    const exportToExcel = (dataToExport, fileName) => {
-        const combinedData = [headers, ...dataToExport];
-        const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-        XLSX.writeFile(workbook, fileName);
-    };
+//     // Export data to Excel file
+//     const exportToExcel = (dataToExport, fileName) => {
+//         const combinedData = [headers, ...dataToExport];
+//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
+//         const workbook = XLSX.utils.book_new();
+//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+//         XLSX.writeFile(workbook, fileName);
+//     };
 
-    return (
-        <div>
-            <h1>Excel Editor</h1>
-            <input type="file" onChange={handleFileUpload} />
+//     return (
+//         <div>
+//             <h1>Excel Editor</h1>
+//             <input type="file" onChange={handleFileUpload} />
 
-            {/* Filters */}
-            <div className="filters">
-                {filters.map((filter, index) => (
-                    <input
-                        key={index}
-                        type="text"
-                        placeholder={`Filter column ${index + 1}`}
-                        value={filter}
-                        onChange={(e) => {
-                            const newFilters = [...filters];
-                            newFilters[index] = e.target.value;
-                            setFilters(newFilters);
-                        }}
-                    />
-                ))}
-                <button onClick={applyFilters}>Apply Filters</button>
-            </div>
+//             {/* Filters */}
+//             <div className="filters">
+//                 {filters.map((filter, index) => (
+//                     <input
+//                         key={index}
+//                         type="text"
+//                         placeholder={`Filter column ${index + 1}`}
+//                         value={filter}
+//                         onChange={(e) => {
+//                             const newFilters = [...filters];
+//                             newFilters[index] = e.target.value;
+//                             setFilters(newFilters);
+//                         }}
+//                     />
+//                 ))}
+//                 <button onClick={applyFilters}>Apply Filters</button>
+//             </div>
 
-            {/* Export buttons */}
-            <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>Export Filtered Data</button>
-            <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>Export Complete Data</button>
+//             {/* Export buttons */}
+//             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>Export Filtered Data</button>
+//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>Export Complete Data</button>
 
-            {/* Add new row button */}
-            <button onClick={addNewRow}>Add New Row</button>
+//             {/* Add new row button */}
+//             <button onClick={addNewRow}>Add New Row</button>
 
-            {/* Data table */}
-            <table>
-                <thead>
-                    <tr>
-                        {headers.map((header, index) => (
-                            <th key={index}>{header}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredData.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                            {row.map((cell, columnIndex) => (
-                                <td key={columnIndex}>
-                                    {columnTypes[columnIndex] === 'date' ? (
-                                        <input
-                                            type="date"
-                                            value={cell}
-                                            onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
-                                        />
-                                    ) : columnTypes[columnIndex] === 'number' ? (
-                                        <input
-                                            type="number"
-                                            value={cell}
-                                            onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
-                                        />
-                                    ) : (
-                                        <input
-                                            type="text"
-                                            value={cell}
-                                            onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
-                                        />
-                                    )}
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
+//             {/* Data table */}
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         {headers.map((header, index) => (
+//                             <th key={index}>{header}</th>
+//                         ))}
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {filteredData.map((row, rowIndex) => (
+//                         <tr key={rowIndex}>
+//                             {row.map((cell, columnIndex) => (
+//                                 <td key={columnIndex}>
+//                                     {columnTypes[columnIndex] === 'date' ? (
+//                                         <input
+//                                             type="date"
+//                                             value={cell}
+//                                             onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                         />
+//                                     ) : columnTypes[columnIndex] === 'number' ? (
+//                                         <input
+//                                             type="number"
+//                                             value={cell}
+//                                             onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                         />
+//                                     ) : (
+//                                         <input
+//                                             type="text"
+//                                             value={cell}
+//                                             onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
+//                                         />
+//                                     )}
+//                                 </td>
+//                             ))}
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+//         </div>
+//     );
+// }
 
-export default ExcelEditor;
+// export default ExcelEditor;
