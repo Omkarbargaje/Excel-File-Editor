@@ -7,6 +7,7 @@ function ExcelEditor() {
     const [data, setData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [filters, setFilters] = useState([]);
+    const [columnTypes, setColumnTypes] = useState([]);
 
     // Handle file upload and read data
     const handleFileUpload = (e) => {
@@ -24,16 +25,42 @@ function ExcelEditor() {
             const headers = excelData[0];
             const dataRows = excelData.slice(1);
 
-            // Set the headers, data, and filtered data
+            // Set headers, data, and filtered data
             setHeaders(headers);
             setData(dataRows);
             setFilteredData(dataRows);
 
             // Initialize filters with empty values
             setFilters(Array(headers.length).fill(''));
+
+            // Determine and set column types
+            setColumnTypes(determineColumnTypes(dataRows));
         };
 
         reader.readAsBinaryString(file);
+    };
+
+    // Function to determine column types based on data rows
+    const determineColumnTypes = (dataRows) => {
+        const types = [];
+        if (dataRows.length > 0) {
+            dataRows[0].forEach((cell, index) => {
+                if (typeof cell === 'number') {
+                    types.push('number');
+                } else if (isValidDate(cell)) {
+                    types.push('date');
+                } else {
+                    types.push('string');
+                }
+            });
+        }
+        return types;
+    };
+
+    // Helper function to check if a value is a valid date
+    const isValidDate = (value) => {
+        const date = new Date(value);
+        return !isNaN(date.getTime());
     };
 
     // Apply filters to the data
@@ -55,6 +82,13 @@ function ExcelEditor() {
     // Handle cell change with data validation
     const handleCellChange = (e, rowIndex, columnIndex) => {
         const newValue = e.target.value;
+        const expectedType = columnTypes[columnIndex];
+
+        // Validate the new cell value based on expected data type
+        if (!isValidValue(newValue, expectedType)) {
+            alert(`Invalid input! Expected a value of type ${expectedType}.`);
+            return;
+        }
 
         // Update data state with the new value
         const newData = [...data];
@@ -63,6 +97,27 @@ function ExcelEditor() {
 
         // Apply filters again to update filtered data if needed
         applyFilters();
+    };
+
+    // Function to check if the new value is valid for the expected data type
+    const isValidValue = (value, type) => {
+        if (type === 'number') {
+            return !isNaN(parseFloat(value)) && isFinite(value);
+        } else if (type === 'date') {
+            return isValidDate(value);
+        } else {
+            // Default to string type
+            return true;
+        }
+    };
+
+    // Function to add a new row
+    const addNewRow = () => {
+        // Create a new row with empty values
+        const newRow = Array(headers.length).fill('');
+        const newData = [...data, newRow];
+        setData(newData);
+        setFilteredData(newData);
     };
 
     // Export data to Excel file
@@ -88,7 +143,6 @@ function ExcelEditor() {
                         placeholder={`Filter column ${index + 1}`}
                         value={filter}
                         onChange={(e) => {
-                            // Update filters
                             const newFilters = [...filters];
                             newFilters[index] = e.target.value;
                             setFilters(newFilters);
@@ -98,13 +152,17 @@ function ExcelEditor() {
                 {/* Button to apply filters */}
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
-             {/* Buttons to export data */}
-             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
+
+            {/* Buttons to export data */}
+            <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
                 Export Filtered Data
             </button>
             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
                 Export Complete Data
             </button>
+
+            {/* Button to add a new row */}
+            <button onClick={addNewRow}>Add New Row</button>
 
             {/* Render table */}
             <table>
@@ -138,374 +196,6 @@ function ExcelEditor() {
 }
 
 export default ExcelEditor;
-
-
-
-
-
-// import React, { useState } from 'react';
-// import * as XLSX from 'xlsx';
-// import './excelEditor.css';
-
-// function ExcelEditor() {
-//     const [headers, setHeaders] = useState([]);
-//     const [data, setData] = useState([]);
-//     const [filteredData, setFilteredData] = useState([]);
-//     const [filters, setFilters] = useState([]);
-
-//     // Handle file upload and read data
-//     const handleFileUpload = (e) => {
-//         const file = e.target.files[0];
-//         const reader = new FileReader();
-
-//         reader.onload = (event) => {
-//             const binaryString = event.target.result;
-//             const workbook = XLSX.read(binaryString, { type: 'binary' });
-//             const sheetName = workbook.SheetNames[0];
-//             const worksheet = workbook.Sheets[sheetName];
-//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-//             // Extract headers (first row) and data rows
-//             const headers = excelData[0];
-//             const dataRows = excelData.slice(1);
-
-//             // Set the headers, data, and filtered data
-//             setHeaders(headers);
-//             setData(dataRows);
-//             setFilteredData(dataRows);
-
-//             // Initialize filters with empty values
-//             setFilters(Array(headers.length).fill(''));
-//         };
-
-//         reader.readAsBinaryString(file);
-//     };
-
-//     // Apply filters to the data
-//     const applyFilters = () => {
-//         // Filter data based on filters state
-//         const filtered = data.filter(row =>
-//             row.every((cell, index) => {
-//                 // If filter is empty, consider it as a match
-//                 if (filters[index] === '') {
-//                     return true;
-//                 }
-//                 // Perform case-insensitive comparison for the filter
-//                 return String(cell).toLowerCase().includes(filters[index].toLowerCase());
-//             })
-//         );
-//         setFilteredData(filtered);
-//     };
-
-//     // Handle cell change with data validation
-//     const handleCellChange = (e, rowIndex, columnIndex) => {
-//         const newValue = e.target.value;
-
-//         // Update data state with the new value
-//         const newData = [...data];
-//         newData[rowIndex][columnIndex] = newValue;
-//         setData(newData);
-
-//         // Apply filters again to update filtered data if needed
-//         applyFilters();
-//     };
-
-//     // Function to handle adding a new row
-//     const addNewRow = () => {
-//         // Create a new row with empty values
-//         const newRow = Array(headers.length).fill('');
-
-//         // Update data and filteredData with the new row
-//         const newData = [...data, newRow];
-//         setData(newData);
-//         setFilteredData(newData);
-//     };
-
-//     // Export data to Excel file
-//     const exportToExcel = (dataToExport, fileName) => {
-//         const combinedData = [headers, ...dataToExport];
-//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
-//         const workbook = XLSX.utils.book_new();
-//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-//         XLSX.writeFile(workbook, fileName);
-//     };
-
-//     return (
-//         <div>
-//             <h1>Excel Editor</h1>
-//             <input type="file" onChange={handleFileUpload} />
-
-//             {/* Render filter inputs above each column */}
-//             <div className="filters">
-//                 {filters.map((filter, index) => (
-//                     <input
-//                         key={index}
-//                         type="text"
-//                         placeholder={`Filter column ${index + 1}`}
-//                         value={filter}
-//                         onChange={(e) => {
-//                             // Update filters
-//                             const newFilters = [...filters];
-//                             newFilters[index] = e.target.value;
-//                             setFilters(newFilters);
-//                         }}
-//                     />
-//                 ))}
-//                 {/* Button to apply filters */}
-//                 <button onClick={applyFilters}>Apply Filters</button>
-//             </div>
-            
-//             {/* Buttons to export data */}
-//             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
-//                 Export Filtered Data
-//             </button>
-//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
-//                 Export Complete Data
-//             </button>
-
-//             {/* Button to add a new row */}
-//             <button onClick={addNewRow}>Add New Row</button>
-
-//             {/* Render table */}
-//             <table>
-//                 <thead>
-//                     <tr>
-//                         {/* Render column headers */}
-//                         {headers.map((header, index) => (
-//                             <th key={index}>{header}</th>
-//                         ))}
-//                     </tr>
-//                 </thead>
-//                 <tbody>
-//                     {/* Render filtered data */}
-//                     {filteredData.map((row, rowIndex) => (
-//                         <tr key={rowIndex}>
-//                             {row.map((cell, columnIndex) => (
-//                                 <td key={columnIndex}>
-//                                     <input
-//                                         type="text"
-//                                         value={cell}
-//                                         onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
-//                                     />
-//                                 </td>
-//                             ))}
-//                         </tr>
-//                     ))}
-//                 </tbody>
-//             </table>
-//         </div>
-//     );
-// }
-
-// export default ExcelEditor;
-
-
-
-
-
-
-
-
-
-
-// import React, { useState } from 'react';
-// import * as XLSX from 'xlsx';
-// import './excelEditor.css';
-
-// function ExcelEditor() {
-//     const [headers, setHeaders] = useState([]);
-//     const [data, setData] = useState([]);
-//     const [filteredData, setFilteredData] = useState([]);
-//     const [filters, setFilters] = useState([]);
-//     const [columnTypes, setColumnTypes] = useState([]);
-
-//     // Handle file upload and read data
-//     const handleFileUpload = (e) => {
-//         const file = e.target.files[0];
-//         const reader = new FileReader();
-
-//         reader.onload = (event) => {
-//             const binaryString = event.target.result;
-//             const workbook = XLSX.read(binaryString, { type: 'binary' });
-//             const sheetName = workbook.SheetNames[0];
-//             const worksheet = workbook.Sheets[sheetName];
-//             const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-//             // Extract headers (first row) and data rows
-//             const headers = excelData[0];
-//             const dataRows = excelData.slice(1);
-
-//             // Set headers, data, and filtered data
-//             setHeaders(headers);
-//             setData(dataRows);
-//             setFilteredData(dataRows);
-
-//             // Initialize filters with empty values
-//             setFilters(Array(headers.length).fill(''));
-
-//             // Determine and set column types
-//             setColumnTypes(determineColumnTypes(dataRows));
-//         };
-
-//         reader.readAsBinaryString(file);
-//     };
-
-//     // Function to determine column types based on data rows
-//     const determineColumnTypes = (dataRows) => {
-//         const types = [];
-//         if (dataRows.length > 0) {
-//             dataRows[0].forEach((cell, index) => {
-//                 if (typeof cell === 'number') {
-//                     types.push('number');
-//                 } else if (isValidDate(cell)) {
-//                     types.push('date');
-//                 } else {
-//                     types.push('string');
-//                 }
-//             });
-//         }
-//         return types;
-//     };
-
-//     // Helper function to check if a value is a valid date
-//     const isValidDate = (value) => {
-//         const date = new Date(value);
-//         return !isNaN(date.getTime());
-//     };
-
-//     // Apply filters to the data
-//     const applyFilters = () => {
-//         // Filter data based on filters state
-//         const filtered = data.filter(row =>
-//             row.every((cell, index) => {
-//                 // If filter is empty, consider it as a match
-//                 if (filters[index] === '') {
-//                     return true;
-//                 }
-//                 // Perform case-insensitive comparison for the filter
-//                 return String(cell).toLowerCase().includes(filters[index].toLowerCase());
-//             })
-//         );
-//         setFilteredData(filtered);
-//     };
-
-//     // Handle cell change with data validation
-//     const handleCellChange = (e, rowIndex, columnIndex) => {
-//         const newValue = e.target.value;
-//         const expectedType = columnTypes[columnIndex];
-
-//         // Validate the new cell value based on expected data type
-//         if (!isValidValue(newValue, expectedType)) {
-//             alert(`Invalid input! Expected a value of type ${expectedType}.`);
-//             return;
-//         }
-
-//         // Update data state with the new value
-//         const newData = [...data];
-//         newData[rowIndex][columnIndex] = newValue;
-//         setData(newData);
-
-//         // Apply filters again to update filtered data if needed
-//         applyFilters();
-//     };
-
-//     // Function to check if the new value is valid for the expected data type
-//     const isValidValue = (value, type) => {
-//         if (type === 'number') {
-//             return !isNaN(parseFloat(value)) && isFinite(value);
-//         } else if (type === 'date') {
-//             return isValidDate(value);
-//         } else {
-//             // Default to string type
-//             return true;
-//         }
-//     };
-
-//     // Function to add a new row
-//     const addNewRow = () => {
-//         // Create a new row with empty values
-//         const newRow = Array(headers.length).fill('');
-//         const newData = [...data, newRow];
-//         setData(newData);
-//         setFilteredData(newData);
-//     };
-
-//     // Export data to Excel file
-//     const exportToExcel = (dataToExport, fileName) => {
-//         const combinedData = [headers, ...dataToExport];
-//         const worksheet = XLSX.utils.aoa_to_sheet(combinedData);
-//         const workbook = XLSX.utils.book_new();
-//         XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-//         XLSX.writeFile(workbook, fileName);
-//     };
-
-//     return (
-//         <div>
-//             <h1>Excel Editor</h1>
-//             <input type="file" onChange={handleFileUpload} />
-
-//             {/* Render filter inputs above each column */}
-//             <div className="filters">
-//                 {filters.map((filter, index) => (
-//                     <input
-//                         key={index}
-//                         type="text"
-//                         placeholder={`Filter column ${index + 1}`}
-//                         value={filter}
-//                         onChange={(e) => {
-//                             const newFilters = [...filters];
-//                             newFilters[index] = e.target.value;
-//                             setFilters(newFilters);
-//                         }}
-//                     />
-//                 ))}
-//                 {/* Button to apply filters */}
-//                 <button onClick={applyFilters}>Apply Filters</button>
-//             </div>
-
-//             {/* Buttons to export data */}
-//             <button onClick={() => exportToExcel(filteredData, 'filtered_data.xlsx')}>
-//                 Export Filtered Data
-//             </button>
-//             <button onClick={() => exportToExcel(data, 'complete_data.xlsx')}>
-//                 Export Complete Data
-//             </button>
-
-//             {/* Button to add a new row */}
-//             <button onClick={addNewRow}>Add New Row</button>
-
-//             {/* Render table */}
-//             <table>
-//                 <thead>
-//                     <tr>
-//                         {/* Render column headers */}
-//                         {headers.map((header, index) => (
-//                             <th key={index}>{header}</th>
-//                         ))}
-//                     </tr>
-//                 </thead>
-//                 <tbody>
-//                     {/* Render filtered data */}
-//                     {filteredData.map((row, rowIndex) => (
-//                         <tr key={rowIndex}>
-//                             {row.map((cell, columnIndex) => (
-//                                 <td key={columnIndex}>
-//                                     <input
-//                                         type="text"
-//                                         value={cell}
-//                                         onChange={(e) => handleCellChange(e, rowIndex, columnIndex)}
-//                                     />
-//                                 </td>
-//                             ))}
-//                         </tr>
-//                     ))}
-//                 </tbody>
-//             </table>
-//         </div>
-//     );
-// }
-
-// export default ExcelEditor;
 
 
 
