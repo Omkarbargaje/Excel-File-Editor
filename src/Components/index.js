@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -14,21 +14,47 @@ function ExcelEditor() {
   const [globalSearch, setGlobalSearch] = useState("");
   const [activeSheetIndex, setActiveSheetIndex] = useState(0);
 
-  useEffect(() => {
-    if (workbook) {
-      const sheetData = workbook.SheetNames.map((sheetName) => {
-        const worksheet = workbook.Sheets[sheetName];
-        const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        return { name: sheetName, data: excelData };
-      });
+ // Define determineColumnTypes function
+ const determineColumnTypes = useCallback((dataRows) => {
+  const types = [];
+  if (dataRows.length > 0) {
+    dataRows[0].forEach((_, colIndex) => {
+      let columnType = "string";
+      for (let rowIndex = 1; rowIndex < dataRows.length; rowIndex++) {
+        const cell = dataRows[rowIndex][colIndex];
+        if (typeof cell === "number") {
+          columnType = "number";
+          break;
+        } else if (isValidDate(cell)) {
+          columnType = "date";
+          break;
+        }
+      }
+      types.push(columnType);
+    });
+  }
+  return types;
+}, []); // Empty dependency array indicates that this function doesn't depend on any props or state
 
-      setSheetData(sheetData);
-      setOriginalData([...sheetData]);
-      setSelectedSheetIndex(0);
-      setFilters(Array(sheetData[0]?.data[0]?.length || 0).fill(""));
-      setColumnTypes(determineColumnTypes(sheetData[0]?.data || []));
-    }
-  }, [workbook]);
+// useEffect hook
+useEffect(() => {
+  if (workbook) {
+    const sheetData = workbook.SheetNames.map((sheetName) => {
+      const worksheet = workbook.Sheets[sheetName];
+      const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      return { name: sheetName, data: excelData };
+    });
+
+    setSheetData(sheetData);
+    setOriginalData([...sheetData]);
+    setSelectedSheetIndex(0);
+    setFilters(Array(sheetData[0]?.data[0]?.length || 0).fill(""));
+    setColumnTypes(determineColumnTypes(sheetData[0]?.data || []));
+  }
+}, [workbook, determineColumnTypes]); // Include determineColumnTypes in the dependency array
+
+
+
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -43,32 +69,6 @@ function ExcelEditor() {
     reader.readAsBinaryString(file);
   };
 
-  //   const handleSheetChange = (index) => {
-  //     setSelectedSheetIndex(index);
-  //     setFilters(Array(sheetData[index]?.data[0]?.length || 0).fill(""));
-  //     setColumnTypes(determineColumnTypes(sheetData[index]?.data || []));
-  //   };
-
-  const determineColumnTypes = (dataRows) => {
-    const types = [];
-    if (dataRows.length > 0) {
-      dataRows[0].forEach((_, colIndex) => {
-        let columnType = "string";
-        for (let rowIndex = 1; rowIndex < dataRows.length; rowIndex++) {
-          const cell = dataRows[rowIndex][colIndex];
-          if (typeof cell === "number") {
-            columnType = "number";
-            break;
-          } else if (isValidDate(cell)) {
-            columnType = "date";
-            break;
-          }
-        }
-        types.push(columnType);
-      });
-    }
-    return types;
-  };
 
   const isValidDate = (value) => {
     const date = new Date(value);
