@@ -1,6 +1,6 @@
 
 import './App.css';
-import ExcelEditor from './Components/index';
+import ExcelEditor from './Components/ExcelEditor';
 
 function App() {
   return (
